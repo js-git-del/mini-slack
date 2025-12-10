@@ -334,17 +334,24 @@ function escapeHtml(text) {
 // ============================================
 // 채널 관리
 // ============================================
+// userid 도 같이 보내도록 추가
 async function selectChannel(channelId) {
     // 이전 채널에서 퇴장
     if (currentChannel) {
-        socket.emit('leave_channel', { channel_id: currentChannel.id });
+        socket.emit('leave_channel', { 
+            channel_id: currentChannel.id,
+            user_id: currentUser.id  // 추가!
+        });
     }
     
     currentChannel = channels.find(c => c.id === channelId);
     if (!currentChannel) return;
     
     // 새 채널에 입장
-    socket.emit('join_channel', { channel_id: currentChannel.id });
+    socket.emit('join_channel', { 
+        channel_id: currentChannel.id,
+        user_id: currentUser.id  // 추가!
+    });
     
     elements.currentChannelName.textContent = `# ${currentChannel.name}`;
     elements.currentChannelDesc.textContent = currentChannel.description || '';

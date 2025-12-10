@@ -98,19 +98,58 @@ def handle_user_online(data):
 @socketio.on('join_channel')
 def handle_join_channel(data):
     """채널 입장"""
+    user_id = data.get('user_id')
     channel_id = data.get('channel_id')
+    
     if channel_id:
         join_room(f'channel_{channel_id}')
-        print(f'사용자가 채널 {channel_id}에 입장했습니다')
+        
+        # user_id가 있으면 DB에서 username 조회
+        if user_id:
+            try:
+                conn = get_db()
+                cursor = conn.cursor()
+                cursor.execute('SELECT username FROM users WHERE id = %s', (user_id,))
+                user = cursor.fetchone()
+                conn.close()
+                
+                username = user['username'] if user else '알 수 없음'
+                print(f'{username} 채널 {channel_id}에 입장했습니다')
+            except Exception as e:
+                print(f'사용자 정보 조회 실패: {e}')
+                print(f'사용자 ID {user_id} 채널 {channel_id}에 입장했습니다')
+        else:
+            print(f'알 수 없는 사용자가 채널 {channel_id}에 입장했습니다')
+        
         emit('joined_channel', {'channel_id': channel_id})
 
 @socketio.on('leave_channel')
 def handle_leave_channel(data):
     """채널 퇴장"""
+    user_id = data.get('user_id')
     channel_id = data.get('channel_id')
     if channel_id:
         leave_room(f'channel_{channel_id}')
         print(f'사용자가 채널 {channel_id}에서 퇴장했습니다')
+
+        if user_id:
+            try:
+                conn = get_db()
+                cursor = conn.cursor()
+                cursor.execute("select username from users where id = %s", (user_id,))
+                user = cursor.fetchone()
+                conn.close()
+
+                username = user['username'] if user else '알 수 없음'
+                print(f'{username} 채널 {channel_id}에 퇴장했습니다')
+            except Exception as e:
+                print(f'사용자 젖ㅇ보 조회 실패: {e}')
+                print(f'사용자 ID {user_id} 채널 {channel_id}에 퇴장했습니다')
+
+        else:
+            print(f'알 수 없는 사용자가 채널{channel_id}에서 퇴장했습니다')
+
+        emit('leave_channel', {'channel_id': channel_id})
 
 @socketio.on('send_message')
 def handle_send_message(data):
