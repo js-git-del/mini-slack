@@ -1,13 +1,10 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from flask_socketio import SocketIO, emit, join_room, leave_room
 import pymysql
 from datetime import datetime
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'mini-slack-secret-key'
-CORS(app, resources={r"/*": {"origins": "*"}})
-socketio = SocketIO(app, cors_allowed_origins="*")
+CORS(app)
 
 # MariaDB 연결 설정
 DB_CONFIG = {
@@ -31,6 +28,7 @@ def home():
         "message": "미니 슬랙 API",
         "version": "1.0.0",
         "endpoints": {
+            "login": "/api/login",
             "users": "/api/users",
             "channels": "/api/channels",
             "messages": "/api/channels/:id/messages"
@@ -40,6 +38,34 @@ def home():
 # ============================================
 # 사용자 API
 # ============================================
+
+# 로그인 (새로 추가!)
+@app.route('/api/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    
+    if not data or 'username' not in data or 'email' not in data:
+        return jsonify({"error": "username과 email은 필수입니다"}), 400
+    
+    username = data['username']
+    email = data['email']
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # username과 email이 둘 다 일치하는 사용자 조회
+    cursor.execute(
+        'SELECT id, username, email, display_name, status FROM users WHERE username = %s AND email = %s', 
+        (username, email)
+    )
+    
+    user = cursor.fetchone()
+    conn.close()
+    
+    if not user:
+        return jsonify({"error": "사용자 이름 또는 이메일이 일치하지 않습니다"}), 404
+    
+    return jsonify(user), 200
 
 # 사용자 목록 조회
 @app.route('/api/users', methods=['GET'])
@@ -207,12 +233,6 @@ def send_message(channel_id):
     new_message = cursor.fetchone()
     conn.close()
     
-    # WebSocket으로 실시간 메시지 전송
-    socketio.emit('new_message', {
-        'channel_id': channel_id,
-        'message': new_message
-    }, room=f'channel_{channel_id}')
-
     return jsonify(new_message), 201
 
 # 메시지 수정
@@ -326,103 +346,10 @@ def delete_reaction(reaction_id):
     
     return jsonify({"message": "반응이 삭제되었습니다"}), 200
 
-# ============================================
-# WebSocket 이벤트 핸들러
-# ============================================
-
-@socketio.on('connect')
-def handle_connect():
-    print(f'사용자 연결됨: {request.sid}')
-    emit('connected', {'data': '웹소켓 연결 성공!'})
-
-@socketio.on('disconnect')
-def handle_disconnect():
-    print(f'사용자 연결 해제됨: {request.sid}')
-
-@socketio.on('join_channel')
-def handle_join_channel(data):
-    channel_id = data.get('channel_id')
-    username = data.get('username', '익명')
-
-    if channel_id:
-        join_room(f'channel_{channel_id}')
-        print(f'{username}이(가) 채널 {channel_id}에 입장했습니다')
-        emit('joined_channel', {
-            'channel_id': channel_id,
-            'message': f'{username}이(가) 채널에 입장했습니다'
-        }, room=f'channel_{channel_id}')
-
-@socketio.on('leave_channel')
-def handle_leave_channel(data):
-    channel_id = data.get('channel_id')
-    username = data.get('username', '익명')
-
-    if channel_id:
-        leave_room(f'channel_{channel_id}')
-        print(f'{username}이(가) 채널 {channel_id}에서 퇴장했습니다')
-        emit('left_channel', {
-            'channel_id': channel_id,
-            'message': f'{username}이(가) 채널에서 퇴장했습니다'
-        }, room=f'channel_{channel_id}')
-
-@socketio.on('send_message')
-def handle_send_message(data):
-    channel_id = data.get('channel_id')
-    user_id = data.get('user_id')
-    content = data.get('content')
-
-    if not all([channel_id, user_id, content]):
-        emit('error', {'message': 'channel_id, user_id, content가 필요합니다'})
-        return
-
-    try:
-        # 데이터베이스에 메시지 저장
-        conn = get_db()
-        cursor = conn.cursor()
-
-        cursor.execute(
-            'INSERT INTO messages (channel_id, user_id, content) VALUES (%s, %s, %s)',
-            (channel_id, user_id, content)
-        )
-        conn.commit()
-
-        message_id = cursor.lastrowid
-        cursor.execute('''
-            SELECT m.*, u.username, u.display_name
-            FROM messages m
-            JOIN users u ON m.user_id = u.id
-            WHERE m.id = %s
-        ''', (message_id,))
-        new_message = cursor.fetchone()
-        conn.close()
-
-        # 채널의 모든 사용자에게 실시간 전송
-        emit('new_message', {
-            'channel_id': channel_id,
-            'message': new_message
-        }, room=f'channel_{channel_id}')
-
-    except Exception as e:
-        emit('error', {'message': f'메시지 전송 실패: {str(e)}'})
-
-@socketio.on('typing')
-def handle_typing(data):
-    channel_id = data.get('channel_id')
-    username = data.get('username')
-    is_typing = data.get('is_typing', True)
-
-    if channel_id and username:
-        emit('user_typing', {
-            'channel_id': channel_id,
-            'username': username,
-            'is_typing': is_typing
-        }, room=f'channel_{channel_id}', include_self=False)
-
 if __name__ == '__main__':
     print("="*50)
     print("💬 미니 슬랙 API 서버 시작")
-    print("📍 HTTP URL: http://localhost:5000")
-    print("🔌 WebSocket URL: ws://localhost:5000")
+    print("📍 URL: http://localhost:5000")
     print("🗄️ Database: MariaDB (api_test)")
     print("="*50)
-    socketio.run(app, debug=True, host='0.0.0.0', port=5000, allow_unsafe_werkzeug=True)
+    app.run(debug=True, host='0.0.0.0', port=5000)

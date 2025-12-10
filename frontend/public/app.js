@@ -6,23 +6,25 @@ let currentChannel = null;
 let channels = [];
 let users = [];
 let messages = [];
+let elements = {};
 
 // ============================================
 // 초기화
 // ============================================
 async function init() {
+    // 로그인 체크 - 로그인 안 되어있으면 로그인 페이지로
+    const savedUser = localStorage.getItem('currentUser');
+    if (!savedUser) {
+        window.location.href = 'login.html';
+        return;
+    }
     
-    // DOM 요소 (const 없이!)
-    elements = {  // ← 여기! const 빼기
+    currentUser = JSON.parse(savedUser);
+    
+    // DOM 요소
+    elements = {
         // 모달
-        loginModal: document.getElementById('loginModal'),
         createChannelModal: document.getElementById('createChannelModal'),
-        
-        // 로그인
-        usernameInput: document.getElementById('usernameInput'),
-        emailInput: document.getElementById('emailInput'),
-        displayNameInput: document.getElementById('displayNameInput'),
-        confirmLogin: document.getElementById('confirmLogin'),
         
         // 채널
         channelList: document.getElementById('channelList'),
@@ -39,24 +41,24 @@ async function init() {
         sendBtn: document.getElementById('sendBtn'),
         
         // 사용자
-        userList: document.getElementById('userList')
+        userList: document.getElementById('userList'),
+        currentUserName: document.getElementById('currentUserName'),
+        logoutBtn: document.getElementById('logoutBtn')
     };
     
-    // 로그인 체크
-    const savedUser = localStorage.getItem('currentUser');
-    if (savedUser) {
-        currentUser = JSON.parse(savedUser);
-        elements.loginModal.classList.add('hidden');
-        await loadInitialData();
-    }
+    // 현재 사용자 이름 표시
+    elements.currentUserName.textContent = currentUser.display_name || currentUser.username;
     
     // 이벤트 리스너
     setupEventListeners();
+    
+    // 초기 데이터 로드
+    await loadInitialData();
 }
 
 function setupEventListeners() {
-    // 로그인
-    elements.confirmLogin.addEventListener('click', handleLogin);
+    // 로그아웃
+    elements.logoutBtn.addEventListener('click', handleLogout);
     
     // 채널 생성
     elements.createChannelBtn.addEventListener('click', openCreateChannelModal);
@@ -78,43 +80,12 @@ function setupEventListeners() {
 }
 
 // ============================================
-// 로그인
+// 로그아웃
 // ============================================
-async function handleLogin() {
-    const username = elements.usernameInput.value.trim();
-    const email = elements.emailInput.value.trim();
-    const displayName = elements.displayNameInput.value.trim();
-    
-    if (!username || !email) {
-        alert('사용자 이름과 이메일을 입력해주세요');
-        return;
-    }
-    
-    try {
-        const response = await fetch(`${API_URL}/users`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                username,
-                email,
-                display_name: displayName || username
-            })
-        });
-        
-        if (!response.ok) {
-            const error = await response.json();
-            alert(error.error || '사용자 생성 실패');
-            return;
-        }
-        
-        currentUser = await response.json();
-        localStorage.setItem('currentUser', JSON.stringify(currentUser));
-        
-        elements.loginModal.classList.add('hidden');
-        await loadInitialData();
-    } catch (error) {
-        console.error('로그인 에러:', error);
-        alert('서버 연결 실패');
+function handleLogout() {
+    if (confirm('로그아웃하시겠습니까?')) {
+        localStorage.removeItem('currentUser');
+        window.location.href = 'login.html';
     }
 }
 
@@ -154,25 +125,17 @@ async function loadUsers() {
 function renderChannels() {
     elements.channelList.innerHTML = channels.map(channel => `
         <div class="channel-item ${currentChannel?.id === channel.id ? 'active' : ''}" 
-             data-id="${channel.id}">
-            # ${channel.name}
+             onclick="selectChannel(${channel.id})">
+            # ${escapeHtml(channel.name)}
         </div>
     `).join('');
-    
-    // 채널 클릭 이벤트
-    document.querySelectorAll('.channel-item').forEach(item => {
-        item.addEventListener('click', () => {
-            const channelId = parseInt(item.dataset.id);
-            selectChannel(channelId);
-        });
-    });
 }
 
 function renderUsers() {
     elements.userList.innerHTML = users.map(user => `
         <div class="user-item">
             <span class="status ${user.status === 'online' ? 'online' : 'offline'}"></span>
-            ${user.display_name || user.username}
+            ${escapeHtml(user.display_name || user.username)}
         </div>
     `).join('');
 }
@@ -181,28 +144,27 @@ function renderMessages() {
     if (messages.length === 0) {
         elements.messageArea.innerHTML = `
             <div class="welcome-message">
-                <h2>💬 대화를 시작해보세요!</h2>
-                <p>아래 입력창에 메시지를 입력하세요.</p>
+                <h2>💬 채널 시작!</h2>
+                <p>첫 번째 메시지를 보내보세요.</p>
             </div>
         `;
         return;
     }
     
     elements.messageArea.innerHTML = messages.map(msg => {
-        const initial = (msg.display_name || msg.username).charAt(0).toUpperCase();
-        const time = new Date(msg.created_at).toLocaleTimeString('ko-KR', { 
-            hour: '2-digit', 
-            minute: '2-digit' 
-        });
+        const user = users.find(u => u.id === msg.user_id);
+        const userName = user?.display_name || user?.username || '알 수 없음';
+        const initials = userName.substring(0, 2).toUpperCase();
         
         return `
-            <div class="message-item" data-id="${msg.id}">
-                <div class="message-avatar">${initial}</div>
+            <div class="message-item">
+                <div class="message-avatar">${initials}</div>
                 <div class="message-content">
                     <div class="message-header">
-                        <span class="message-author">${msg.display_name || msg.username}</span>
-                        <span class="message-time">${time}</span>
-                        ${msg.is_edited ? '<span class="message-edited">(수정됨)</span>' : ''}
+                        <span class="message-author">${escapeHtml(userName)}</span>
+                        <span class="message-time">${new Date(msg.created_at).toLocaleString('ko-KR')}</span>
+                        ${msg.updated_at !== msg.created_at ? 
+                            '<span class="message-edited">(수정됨)</span>' : ''}
                     </div>
                     <div class="message-text">${escapeHtml(msg.content)}</div>
                     ${msg.user_id === currentUser.id ? `
@@ -355,7 +317,8 @@ async function editMessage(messageId) {
 }
 
 async function deleteMessage(messageId) {
-    if (!confirm('이 메시지를 삭제하시겠습니까?')) return;
+    if (!confirm('이 메시지를 삭제하시겠습니까?'))
+        return;
     
     try {
         const response = await fetch(`${API_URL}/messages/${messageId}`, {

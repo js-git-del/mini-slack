@@ -119,6 +119,9 @@ body {
 .chat-header {
     padding: 20px 24px;
     border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .channel-info h2 {
@@ -129,6 +132,34 @@ body {
 .channel-desc {
     font-size: 13px;
     color: #616061;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-info span {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1d1c1d;
+}
+
+.btn-logout {
+    padding: 8px 16px;
+    background: white;
+    color: #1d1c1d;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.btn-logout:hover {
+    background: #f8f8f8;
+    border-color: #999;
 }
 
 .message-area {
@@ -235,28 +266,6 @@ body {
 
 .message-actions button:hover {
     background: #f8f8f8;
-}
-
-.message-reactions {
-    display: flex;
-    gap: 4px;
-    margin-top: 4px;
-}
-
-.reaction-item {
-    padding: 2px 8px;
-    background: white;
-    border: 1px solid #ddd;
-    border-radius: 12px;
-    font-size: 13px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.reaction-item:hover {
-    border-color: #1164a3;
 }
 
 /* ============================================
