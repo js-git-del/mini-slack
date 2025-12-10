@@ -6,7 +6,8 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    height: 100vh;
+    background: #1a1d21;
+    color: #d1d2d3;
     overflow: hidden;
 }
 
@@ -20,27 +21,35 @@ body {
    ============================================ */
 .sidebar {
     width: 260px;
-    background: #3f0e40;
-    color: white;
+    background: #1a1d21;
+    border-right: 1px solid #2d3139;
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
 }
 
 .workspace-header {
     padding: 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid #2d3139;
+    position: relative;
 }
 
 .workspace-header h1 {
-    font-size: 18px;
+    font-size: 20px;
     margin-bottom: 15px;
+    color: #fff;
+}
+
+.websocket-status {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 12px;
 }
 
 .btn-create {
     width: 100%;
     padding: 8px;
-    background: rgba(255, 255, 255, 0.1);
+    background: #4a154b;
     color: white;
     border: none;
     border-radius: 4px;
@@ -50,7 +59,7 @@ body {
 }
 
 .btn-create:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: #611f69;
 }
 
 .channels-section,
@@ -60,11 +69,10 @@ body {
 
 .channels-section h3,
 .users-section h3 {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+    color: #8b8d94;
     margin-bottom: 10px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
 }
 
 .channel-list,
@@ -74,8 +82,7 @@ body {
     gap: 2px;
 }
 
-.channel-item,
-.user-item {
+.channel-item {
     padding: 6px 12px;
     border-radius: 4px;
     cursor: pointer;
@@ -83,27 +90,47 @@ body {
     align-items: center;
     gap: 8px;
     transition: background 0.2s;
-    font-size: 15px;
 }
 
-.channel-item:hover,
-.user-item:hover {
-    background: rgba(255, 255, 255, 0.1);
+.channel-item:hover {
+    background: #2d3139;
 }
 
 .channel-item.active {
     background: #1164a3;
+    color: white;
 }
 
-.user-item .status {
-    width: 8px;
-    height: 8px;
+.channel-hash {
+    font-weight: bold;
+    color: #8b8d94;
+}
+
+.channel-item.active .channel-hash {
+    color: white;
+}
+
+.user-item {
+    padding: 6px 12px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.user-status {
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
+    background: #666;
+}
+
+.user-item.online .user-status {
     background: #2bac76;
 }
 
-.user-item .status.offline {
-    background: #868686;
+.user-item.offline .user-status {
+    background: #888;
 }
 
 /* ============================================
@@ -113,117 +140,115 @@ body {
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: white;
+    background: #fff;
 }
 
 .chat-header {
-    padding: 20px 24px;
-    border-bottom: 1px solid #ddd;
+    padding: 20px;
+    border-bottom: 1px solid #e0e0e0;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    background: white;
 }
 
 .channel-info h2 {
     font-size: 18px;
+    color: #1d1c1d;
     margin-bottom: 4px;
 }
 
 .channel-desc {
-    font-size: 13px;
+    font-size: 14px;
     color: #616061;
 }
 
 .user-info {
     display: flex;
     align-items: center;
-    gap: 12px;
-}
-
-.user-info span {
-    font-size: 14px;
-    font-weight: 600;
-    color: #1d1c1d;
+    gap: 15px;
 }
 
 .btn-logout {
     padding: 8px 16px;
-    background: white;
-    color: #1d1c1d;
-    border: 1px solid #ddd;
+    background: #e0e0e0;
+    border: none;
     border-radius: 4px;
     cursor: pointer;
     font-size: 14px;
-    transition: all 0.2s;
-}
-
-.btn-logout:hover {
-    background: #f8f8f8;
-    border-color: #999;
-}
-
-.message-area {
-    flex: 1;
-    overflow-y: auto;
-    padding: 20px 24px;
-}
-
-.welcome-message {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    text-align: center;
-    color: #616061;
-}
-
-.welcome-message h2 {
-    font-size: 32px;
-    margin-bottom: 16px;
-}
-
-.message-item {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 16px;
-    padding: 8px;
-    border-radius: 4px;
     transition: background 0.2s;
 }
 
-.message-item:hover {
+.btn-logout:hover {
+    background: #d0d0d0;
+}
+
+/* ============================================
+   메시지 영역
+   ============================================ */
+.message-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    background: white;
+}
+
+.welcome-message {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.welcome-message h2 {
+    font-size: 28px;
+    color: #1d1c1d;
+    margin-bottom: 10px;
+}
+
+.welcome-message p {
+    color: #616061;
+    font-size: 16px;
+}
+
+.message {
+    display: flex;
+    gap: 12px;
+    padding: 8px 0;
+    transition: background 0.1s;
+}
+
+.message:hover {
     background: #f8f8f8;
+    margin: 0 -20px;
+    padding: 8px 20px;
 }
 
 .message-avatar {
     width: 36px;
     height: 36px;
     border-radius: 4px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #4a154b;
+    color: white;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
     font-weight: bold;
-    font-size: 14px;
     flex-shrink: 0;
 }
 
 .message-content {
     flex: 1;
+    min-width: 0;
 }
 
 .message-header {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 8px;
     margin-bottom: 4px;
 }
 
 .message-author {
-    font-weight: bold;
-    font-size: 15px;
+    font-weight: 600;
     color: #1d1c1d;
 }
 
@@ -234,37 +259,45 @@ body {
 
 .message-edited {
     font-size: 12px;
-    color: #616061;
-    font-style: italic;
+    color: #888;
 }
 
 .message-text {
-    font-size: 15px;
     color: #1d1c1d;
-    line-height: 1.46668;
+    line-height: 1.5;
     word-wrap: break-word;
 }
 
 .message-actions {
+    margin-top: 8px;
     display: none;
-    gap: 4px;
-    margin-top: 4px;
+    gap: 8px;
 }
 
-.message-item:hover .message-actions {
+.message:hover .message-actions {
     display: flex;
 }
 
 .message-actions button {
-    padding: 4px 8px;
-    background: white;
-    border: 1px solid #ddd;
+    padding: 4px 12px;
+    background: #e0e0e0;
+    border: none;
     border-radius: 4px;
-    font-size: 12px;
     cursor: pointer;
+    font-size: 12px;
+    transition: background 0.2s;
 }
 
 .message-actions button:hover {
+    background: #d0d0d0;
+}
+
+/* 타이핑 표시 */
+.typing-indicator {
+    padding: 8px 20px;
+    font-size: 13px;
+    color: #616061;
+    font-style: italic;
     background: #f8f8f8;
 }
 
@@ -272,48 +305,52 @@ body {
    메시지 입력
    ============================================ */
 .message-input-container {
-    padding: 24px;
-    border-top: 1px solid #ddd;
+    padding: 20px;
+    border-top: 1px solid #e0e0e0;
+    background: white;
 }
 
 .message-input-wrapper {
     display: flex;
-    gap: 8px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 8px;
-    background: white;
-}
-
-.message-input-wrapper:focus-within {
-    border-color: #1164a3;
+    gap: 12px;
+    align-items: flex-end;
 }
 
 #messageInput {
     flex: 1;
-    border: none;
-    outline: none;
-    resize: none;
-    font-size: 15px;
+    padding: 12px;
+    border: 1px solid #d1d2d3;
+    border-radius: 6px;
     font-family: inherit;
-    line-height: 1.46668;
-    max-height: 200px;
+    font-size: 14px;
+    resize: none;
+    max-height: 150px;
+}
+
+#messageInput:focus {
+    outline: none;
+    border-color: #1164a3;
+}
+
+#messageInput:disabled {
+    background: #f8f8f8;
+    cursor: not-allowed;
 }
 
 .btn-send {
-    padding: 8px 16px;
+    padding: 12px 24px;
     background: #007a5a;
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
     font-size: 14px;
-    font-weight: bold;
-    align-self: flex-end;
+    font-weight: 600;
+    transition: background 0.2s;
 }
 
 .btn-send:hover:not(:disabled) {
-    background: #006644;
+    background: #005f46;
 }
 
 .btn-send:disabled {
@@ -350,27 +387,22 @@ body {
 }
 
 .modal-header {
-    padding: 24px 24px 16px;
-    border-bottom: 1px solid #ddd;
+    padding: 20px;
+    border-bottom: 1px solid #e0e0e0;
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
 .modal-header h3 {
-    font-size: 20px;
+    font-size: 18px;
+    color: #1d1c1d;
 }
 
 .modal-close {
-    background: none;
-    border: none;
-    font-size: 28px;
+    font-size: 24px;
     cursor: pointer;
     color: #616061;
-    line-height: 1;
-    padding: 0;
-    width: 28px;
-    height: 28px;
 }
 
 .modal-close:hover {
@@ -378,7 +410,7 @@ body {
 }
 
 .modal-body {
-    padding: 24px;
+    padding: 20px;
 }
 
 .form-group {
@@ -388,69 +420,76 @@ body {
 .form-group label {
     display: block;
     margin-bottom: 8px;
-    font-weight: bold;
-    font-size: 14px;
+    font-weight: 600;
     color: #1d1c1d;
 }
 
-.form-group input,
-.form-group textarea {
+.form-group input {
     width: 100%;
-    padding: 12px;
-    border: 1px solid #ddd;
+    padding: 10px;
+    border: 1px solid #d1d2d3;
     border-radius: 4px;
-    font-size: 15px;
-    font-family: inherit;
+    font-size: 14px;
 }
 
-.form-group input:focus,
-.form-group textarea:focus {
+.form-group input:focus {
     outline: none;
     border-color: #1164a3;
 }
 
 .modal-footer {
-    padding: 16px 24px;
-    border-top: 1px solid #ddd;
+    padding: 20px;
+    border-top: 1px solid #e0e0e0;
     display: flex;
     justify-content: flex-end;
     gap: 12px;
 }
 
-.btn-primary {
+.btn-cancel,
+.btn-confirm {
     padding: 10px 20px;
-    background: #007a5a;
-    color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 15px;
-    font-weight: bold;
-}
-
-.btn-primary:hover {
-    background: #006644;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background 0.2s;
 }
 
 .btn-cancel {
-    padding: 10px 20px;
-    background: white;
+    background: #e0e0e0;
     color: #1d1c1d;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 15px;
 }
 
 .btn-cancel:hover {
-    background: #f8f8f8;
+    background: #d0d0d0;
+}
+
+.btn-confirm {
+    background: #007a5a;
+    color: white;
+}
+
+.btn-confirm:hover {
+    background: #005f46;
 }
 
 /* ============================================
-   반응형
+   스크롤바
    ============================================ */
-@media (max-width: 768px) {
-    .sidebar {
-        width: 220px;
-    }
+.message-area::-webkit-scrollbar {
+    width: 8px;
+}
+
+.message-area::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.message-area::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.message-area::-webkit-scrollbar-thumb:hover {
+    background: #555;
 }
